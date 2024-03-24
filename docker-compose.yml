@@ -1,0 +1,42 @@
+﻿services:
+  webapp:
+    image: webapp
+    build:
+      context: .
+      dockerfile: WebApp/Dockerfile
+    ports: [ 8080:8080 ]
+    depends_on: [ postgres, pgbouncer ]
+  postgres:
+    image: postgres:16
+    # set shared memory limit when using docker-compose
+    shm_size: 256mb
+    # or set shared memory limit when deploy via swarm stack
+    #volumes:
+    #  - type: tmpfs
+    #    target: /dev/shm
+    #    tmpfs:
+    #      size: 134217728 # 128*2^20 bytes = 128Mb
+    environment:
+      POSTGRES_PASSWORD: Ans13042002
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_HOST_AUTH_METHOD: md5
+      POSTGRES_INITDB_ARGS: --auth=md5
+    ports: [ 5432 ]
+    restart: on-failure
+    volumes: [ "./pg_data:/var/lib/postgresql/data/" ]
+  pgbouncer:
+    image: edoburu/pgbouncer:1.22.0-p0
+    environment:
+      DB_USER: postgres
+      DB_PASSWORD: Ans13042002
+      DB_HOST: postgres
+      DB_NAME: postgres
+      POOL_MODE: transaction
+      MAX_DB_CONNECTIONS: 100
+      DEFAULT_POOL_SIZE: 40
+      AUTH_TYPE: md5
+      ADMIN_USERS: postgres,dbuser
+    restart: on-failure
+    ports: [ 5435:5432 ]
+    depends_on: [ postgres ]
