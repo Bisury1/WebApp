@@ -1,24 +1,28 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using WebApp.Persistence.AppDbContext;
-using WebApp.Persistence.Model;
+using WebApp;
+using WebApp.Application.DI;
+using WebApp.Domain.Entity;
+using WebApp.Domain.Enum;
+using WebApp.Infrastructure.AppDbContext;
+using WebApp.Infrastructure.DI;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-                       throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options => options.LoginPath = "/v1/users/auth");
+builder.Services.AddAuthorization();
 
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
-        Title = "ForecastWeathers API",
+        Title = "Books Reviews API",
         Description = "An ASP.NET Core Web API for managing items",
     });
     
@@ -26,14 +30,27 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
-builder.Services.AddDefaultIdentity<DbUser>(options =>
-    {
-        options.SignIn.RequireConfirmedAccount = true;
-    })
-    .AddEntityFrameworkStores<ApplicationDbContext>();
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllers();
+builder.Services.AddApplication();
+builder.Services.AddLogging(option => option.AddSimpleConsole());
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var roles = await roleManager.Roles.ToListAsync();
+    if (roles.FirstOrDefault(r => r.Name == nameof(UserRoles.Admin)) is null)
+        await roleManager.CreateAsync(new IdentityRole { Name = nameof(UserRoles.Admin), NormalizedName = "ADMIN" });
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    var user = Storage.User;
+    await userManager.CreateAsync(user, Storage.UserPassword);
+    user = await userManager.FindByNameAsync("a.nebaev");
+    await userManager.AddToRoleAsync(user, nameof(UserRoles.Admin));
+}
 
 app.UseSwagger(options =>
 {
@@ -52,16 +69,16 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthorization();
+app.MapControllers();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-app.MapRazorPages();
+app.UseAuthorization();
 
 app.Run();

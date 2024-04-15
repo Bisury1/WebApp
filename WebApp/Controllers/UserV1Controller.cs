@@ -1,0 +1,73 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using WebApp.Domain.Entity;
+using WebApp.Models;
+
+namespace WebApp.Controllers;
+
+public class UserV1Controller(UserManager<User> userManager, SignInManager<User> signInManager, ILogger<UserV1Controller> logger) : ControllerBase
+{
+    /// <summary>
+    /// Авторизация пользвоателей
+    /// </summary>
+    /// <param name="authRequest">Данные для авторизации</param>
+    /// <returns></returns>
+    [HttpPost]
+    [Route("/v1/users/auth")]
+    public async Task<IActionResult> Auth([FromBody] AuthRequest authRequest)
+    {
+        logger.LogWarning(authRequest.Password);
+        var result =
+            await signInManager.PasswordSignInAsync(authRequest.Email, authRequest.Password, 
+                authRequest.Remember,false);
+        
+        if (result.Succeeded)
+        {
+            if (!string.IsNullOrEmpty(authRequest.ReturnUrl))
+                return Redirect(authRequest.ReturnUrl);
+
+            return Ok();
+        }
+
+        return BadRequest("Неправильный логин или пароль");
+    }
+
+    /// <summary>
+    /// Регистрация пользователей
+    /// </summary>
+    /// <param name="registerRequest">Данные для регистрации</param>
+    /// <returns></returns>
+    [HttpPost]
+    [Route("/v1/users/register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
+    {
+        logger.LogWarning(registerRequest.Email);
+        if (registerRequest.Password != registerRequest.PasswordApprove)
+            return BadRequest("Пароль отличается");
+
+        var user = new User { UserName = registerRequest.Login, Email = registerRequest.Email };
+        var result = await userManager.CreateAsync(user, registerRequest.Password);
+
+        if (result.Succeeded)
+        {
+            await signInManager.SignInAsync(user, registerRequest.Remember);
+            return Ok();
+        }
+
+        return BadRequest(string.Join(" ", result.Errors.Select(e => e.Description)));
+    }
+
+    /// <summary>
+    /// Выход из аккаунта
+    /// </summary>
+    /// <returns></returns>
+    [HttpPost]
+    [Authorize]
+    [Route("/v1/users/auth/logout")]
+    public async Task<IActionResult> Logout()
+    {
+        await signInManager.SignOutAsync();
+        return Ok();
+    }
+}
