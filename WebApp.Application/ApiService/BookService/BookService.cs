@@ -33,16 +33,27 @@ public class BookService(
         
         return bookMapper.MapToGetBookResponse(book!);
     }
-
+    
     public async Task<DtoGetBooksResponse> GetBooks()
     {
-        var books = await bookDbContext.Books.AsNoTracking().ToListAsync();
+        var books = await bookDbContext.Books.AsNoTracking()
+            .Include(b => b.Authors).ToListAsync();
         return new DtoGetBooksResponse
         {
             Books = bookMapper.MapToGetBookResponses(books)
         };
     }
-    
+
+    public async Task<DtoGetBooksResponse> GetBooksByTitle(DtoGetBookByTitleRequest getBookByTitleRequest)
+    {
+        var books = await bookDbContext.Books.AsNoTracking().Include(b => b.Authors)
+            .Where(b => b.Title.Contains(getBookByTitleRequest.Title)).ToListAsync();
+        return new DtoGetBooksResponse
+        {
+            Books = bookMapper.MapToGetBookResponses(books)
+        };
+    }
+
     public async Task<int> CreateBook(DtoCreateBookRequest createBookRequest)
     {
         var authorsFromRequest = createBookRequest.AuthorsIds;
@@ -99,12 +110,11 @@ public class BookService(
 
     public async Task<bool> DeleteBook(DtoDeleteBookRequest deleteBookRequest)
     {
-        var bookId = deleteBookRequest.Id;
-        var book = await bookDbContext.Books.FindAsync(bookId);
+        var book = await bookDbContext.Books.FindAsync(deleteBookRequest.Id);
         if (book is null)
-            ThrowHelper.ThrowRecordNotFoundException(string.Format(NotFoundBookMessage, bookId));
+            return false;
 
-        bookDbContext.Books.Remove(book!);
+        bookDbContext.Books.Remove(book);
         await saveDbContext.SaveChangesAsync(CancellationToken.None);
         return true;
     }

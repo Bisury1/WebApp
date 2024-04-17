@@ -6,7 +6,7 @@ using WebApp.Models;
 
 namespace WebApp.Controllers;
 
-public class UserV1Controller(UserManager<User> userManager, SignInManager<User> signInManager, ILogger<UserV1Controller> logger) : ControllerBase
+public class UserV1Controller(UserManager<User> userManager, SignInManager<User> signInManager) : ControllerBase
 {
     /// <summary>
     /// Авторизация пользвоателей
@@ -17,9 +17,8 @@ public class UserV1Controller(UserManager<User> userManager, SignInManager<User>
     [Route("/v1/users/auth")]
     public async Task<IActionResult> Auth([FromBody] AuthRequest authRequest)
     {
-        logger.LogWarning(authRequest.Password);
         var result =
-            await signInManager.PasswordSignInAsync(authRequest.Email, authRequest.Password, 
+            await signInManager.PasswordSignInAsync(authRequest.Login, authRequest.Password, 
                 authRequest.Remember,false);
         
         if (result.Succeeded)
@@ -42,7 +41,6 @@ public class UserV1Controller(UserManager<User> userManager, SignInManager<User>
     [Route("/v1/users/register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
     {
-        logger.LogWarning(registerRequest.Email);
         if (registerRequest.Password != registerRequest.PasswordApprove)
             return BadRequest("Пароль отличается");
 

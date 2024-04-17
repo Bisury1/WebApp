@@ -14,5 +14,6 @@ public class RecordNotFoundFilter : ExceptionFilterAttribute
         {
             Content = $"{exceptionMessage}"
         };
+        context.ExceptionHandled = true;
     }
 }

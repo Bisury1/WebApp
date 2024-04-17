@@ -10,7 +10,6 @@ public class UserMapper: IUserMapper
         => new()
         {
             UserId = user.Id,
-            Email = user.Email!,
             UserName = user.UserName!
         };
 }

@@ -3,6 +3,5 @@
 public class DtoGetUserResponse
 {
     public required string UserId { get; init; }
-    public required string Email { get; init; }
-    public string UserName { get; init; }
+    public required string UserName { get; init; }
 }

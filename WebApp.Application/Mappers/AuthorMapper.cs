@@ -1,4 +1,5 @@
-﻿using WebApp.Application.DtoResponse.AuthorDtoResponse;
+﻿using WebApp.Application.DtoRequest.AuthorDtoRequest;
+using WebApp.Application.DtoResponse.AuthorDtoResponse;
 using WebApp.Application.Mappers.Interfaces;
 using WebApp.Domain.Entity;
 
@@ -15,4 +16,10 @@ public class AuthorMapper : IAuthorMapper
 
     public IEnumerable<DtoGetAuthorResponse> MapToGetAuthorResponses(IEnumerable<Author> author)
         => author.Select(MapToGetAuthorResponse);
+    
+    public Author MapToAuthor(DtoCreateAuthorRequest author)
+        => new()
+        {
+            Alias = author.Alias
+        };
 }

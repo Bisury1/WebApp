@@ -6,7 +6,7 @@ public class DtoGetReviewResponse
 {
     public int Id { get; init; }
     public required string Title { get; init; }
-    public string? Content { get; set; }
+    public string? Content { get; init; }
     public byte Grade { get; init; }
-    public required DtoGetUserResponse Users { get; init; }
+    public required DtoGetUserResponse User { get; init; }
 }

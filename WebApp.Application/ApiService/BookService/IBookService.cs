@@ -7,6 +7,7 @@ public interface IBookService
 {
     Task<DtoGetBookResponse> GetBook(DtoGetBookRequest getBookRequest);
     Task<DtoGetBooksResponse> GetBooks();
+    Task<DtoGetBooksResponse> GetBooksByTitle(DtoGetBookByTitleRequest title);
     Task<int> CreateBook(DtoCreateBookRequest createBookRequest);
     Task<bool> UpdateTitle(DtoUpdateBookTitleRequest updateBookTitleRequest);
     Task<bool> UpdateBook(DtoUpdateBookRequest updateBookRequest);

@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Domain.Entity;
@@ -7,7 +6,10 @@ using WebApp.Domain.Enum;
 
 namespace WebApp.Controllers;
 
-[Route("/v1/admin")]
+/// <summary>
+/// Только для админа
+/// </summary>
+/// <param name="userManager"></param>
 [Authorize(Roles = nameof(UserRoles.Admin))]
 public class AdminV1Controller(UserManager<User> userManager) : ControllerBase
 {
@@ -17,7 +19,7 @@ public class AdminV1Controller(UserManager<User> userManager) : ControllerBase
     /// <param name="email">Почта пользователя</param>
     /// <returns></returns>
     [HttpPatch]
-    [Route("/users/roles/edit")]
+    [Route("/v1/admin/users/roles/edit")]
     public async Task<IActionResult> EditRoleToAdmin([FromForm] string email)
     {
         var user = await userManager.FindByEmailAsync(email);
@@ -36,7 +38,7 @@ public class AdminV1Controller(UserManager<User> userManager) : ControllerBase
     /// <param name="email">Почта пользователя</param>
     /// <returns></returns>
     [HttpDelete]
-    [Route("/users/delete")]
+    [Route("/v1/admin/users/delete")]
     public async Task<IActionResult> DeleteUser([FromForm] string email)
     {
         var user = await userManager.FindByEmailAsync(email);
