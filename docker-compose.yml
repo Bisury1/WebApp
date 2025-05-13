@@ -1,18 +1,17 @@
-﻿networks:
-  deploy-guide-dev:
-    driver: bridge
-services:
+﻿services:
   webapp:
     environment:
-      - ConnectionString=Server=postgres;Port=5432;Database=postgres;Username=postgres;Password=Ans13042002
+      - ConnectionString=Server=postgres;Port=5432;Database=postgres;Username=postgres;Password=admin
     image: webapp
     build:
       context: .
       dockerfile: WebApp/Dockerfile
-    ports: [ 8080:8080 ]
+    ports: [ "8080:8080" ]
     networks:
       - deploy-guide-dev
-    depends_on: [ postgres ]
+    depends_on: 
+      postgres:
+        condition: service_healthy
   postgres:
     image: postgres:16
     # set shared memory limit when using docker-compose
@@ -24,11 +23,26 @@ services:
     #    tmpfs:
     #      size: 134217728 # 128*2^20 bytes = 128Mb
     environment:
-      POSTGRES_PASSWORD: Ans13042002
+      POSTGRES_PASSWORD: admin
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
     ports :
       - "5434:5432" 
     networks:
       - deploy-guide-dev
-    volumes: [ "./pg_data:/var/lib/postgresql/data/" ]
+    volumes:
+      - db:/data/postgres
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d postgres -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  deploy-guide-dev:
+    driver: bridge
+
+volumes:
+  db:
+    
